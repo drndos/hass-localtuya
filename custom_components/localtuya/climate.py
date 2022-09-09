@@ -203,19 +203,19 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
             command["key1"] = self._config(CONF_AC_MODE_DEHUMY)
         elif hvac_mode == HVAC_MODE_FAN_ONLY:
             command["key1"] = self._config(CONF_AC_MODE_SPEED)
-        await self._device.set_dp(json.json_dumps(command), self._dp_id)
+        await self._device.set_dp(json.json_dumps(command), 201)
 
     async def async_turn_on(self):
         """Turn the entity on."""
         command = COMMAND
         command["key1"] = self._config(CONF_AC_SWITCH_ON)
-        await self._device.set_dp(json.json_dumps(command), self._dp_id)
+        await self._device.set_dp(json.json_dumps(command), 201)
 
     async def async_turn_off(self):
         """Turn the entity off."""
         command = COMMAND
         command["key1"] = self._config(CONF_AC_SWITCH_OFF)
-        await self._device.set_dp(json.json_dumps(command), self._dp_id)
+        await self._device.set_dp(json.json_dumps(command), 201)
 
     @property
     def min_temp(self):
