@@ -19,6 +19,7 @@ from homeassistant.const import (
     ATTR_TEMPERATURE,
     TEMP_CELSIUS,
 )
+from homeassistant.helpers import json
 
 from .common import LocalTuyaEntity, async_setup_entry
 from .const import (
@@ -32,8 +33,7 @@ from .const import (
     CONF_AC_MODE_AUTO,
     CONF_AC_MODE_SPEED,
     CONF_AC_MODE_DEHUMY,
-    CONF_AC_INC_TEMP,
-    CONF_AC_DEC_TEMP,
+    CONF_AC_SET_TEMP,
     CONF_CURRENT_HUMIDITY_DP,
     CONF_AC_SWITCH_ON,
     CONF_AC_SWITCH_OFF,
@@ -41,6 +41,14 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+
+COMMAND = {
+    "control": "send_ir",
+    "head": "010ed80000000000040015003d00a900c8",
+    "key1": "",
+    "type": 0,
+    "delay": 300
+}
 
 def flow_schema(dps):
     """Return schema used in config flow."""
@@ -58,8 +66,7 @@ def flow_schema(dps):
         vol.Optional(CONF_AC_MODE_AUTO): str,
         vol.Optional(CONF_AC_MODE_SPEED): str,
         vol.Optional(CONF_AC_MODE_DEHUMY): str,
-        vol.Optional(CONF_AC_INC_TEMP): str,
-        vol.Optional(CONF_AC_DEC_TEMP): str,
+        vol.Optional(CONF_AC_SET_TEMP): str,
     }
 
 
@@ -83,6 +90,7 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
         self._fan_mode = None
         self._hvac_mode = None
         self._target_temperature = None
+        # self._dp_id
 
         _LOGGER.debug("Initialized ir climate [%s]", self.name)
 
@@ -178,19 +186,36 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
     def set_fan_mode(self, fan_mode):
         """Set new target fan mode."""
         # Set temperature command
+        self._fan_mode = fan_mode
         return NotImplementedError()
 
     async def async_set_hvac_mode(self, hvac_mode):
         """Set new target operation mode."""
-        return NotImplementedError()
+        self._hvac_mode = hvac_mode
+        command = COMMAND
+        if hvac_mode == HVAC_MODE_HEAT:
+            command["key1"] = self._config(CONF_AC_MODE_HOT)
+        elif hvac_mode == HVAC_MODE_COOL:
+            command["key1"] = self._config(CONF_AC_MODE_COLD)
+        elif hvac_mode == HVAC_MODE_AUTO:
+            command["key1"] = self._config(CONF_AC_MODE_AUTO)
+        elif hvac_mode == HVAC_MODE_DRY:
+            command["key1"] = self._config(CONF_AC_MODE_DEHUMY)
+        elif hvac_mode == HVAC_MODE_FAN_ONLY:
+            command["key1"] = self._config(CONF_AC_MODE_SPEED)
+        await self._device.set_dp(json.json_dumps(command), self._dp_id)
 
     async def async_turn_on(self):
         """Turn the entity on."""
-        return NotImplementedError()
+        command = COMMAND
+        command["key1"] = self._config(CONF_AC_SWITCH_ON)
+        await self._device.set_dp(json.json_dumps(command), self._dp_id)
 
     async def async_turn_off(self):
         """Turn the entity off."""
-        return NotImplementedError()
+        command = COMMAND
+        command["key1"] = self._config(CONF_AC_SWITCH_OFF)
+        await self._device.set_dp(json.json_dumps(command), self._dp_id)
 
     @property
     def min_temp(self):
