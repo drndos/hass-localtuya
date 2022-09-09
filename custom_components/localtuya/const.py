@@ -17,7 +17,6 @@ PLATFORMS = [
     "sensor",
     "switch",
     "vacuum",
-    "ir_climate",
 ]
 
 TUYA_DEVICES = "tuya_devices"
