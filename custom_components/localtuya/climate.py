@@ -1,4 +1,5 @@
 """Platform to locally control Tuya-based climate devices."""
+import json
 import logging
 from functools import partial
 
@@ -19,7 +20,6 @@ from homeassistant.const import (
     ATTR_TEMPERATURE,
     TEMP_CELSIUS,
 )
-from homeassistant.helpers import json
 
 from .common import LocalTuyaEntity, async_setup_entry
 from .const import (
@@ -194,30 +194,62 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
     async def async_set_hvac_mode(self, hvac_mode):
         """Set new target operation mode."""
         self._hvac_mode = hvac_mode
-        command = COMMANDS["send_ir"]
+        #command = COMMANDS["send_ir"]
+        command = None
         if hvac_mode == HVAC_MODE_HEAT:
-            command["key1"] = self._config(CONF_AC_MODE_HOT)
+            command = {
+                "control": "send_ir",
+                "head": "",
+                "key1": self._config(CONF_AC_MODE_HOT),
+                "type": 0,
+                "delay": 300
+            }
         elif hvac_mode == HVAC_MODE_COOL:
-            command["key1"] = self._config(CONF_AC_MODE_COLD)
+            command = {
+                "control": "send_ir",
+                "head": "",
+                "key1": self._config(CONF_AC_MODE_COLD),
+                "type": 0,
+                "delay": 300
+            }
         elif hvac_mode == HVAC_MODE_AUTO:
-            command["key1"] = self._config(CONF_AC_MODE_AUTO)
+            command = {
+                "control": "send_ir",
+                "head": "",
+                "key1": self._config(CONF_AC_MODE_AUTO),
+                "type": 0,
+                "delay": 300
+            }
         elif hvac_mode == HVAC_MODE_DRY:
-            command["key1"] = self._config(CONF_AC_MODE_DEHUMY)
+            command = {
+                "control": "send_ir",
+                "head": "",
+                "key1": self._config(CONF_AC_MODE_DEHUMY),
+                "type": 0,
+                "delay": 300
+            }
         elif hvac_mode == HVAC_MODE_FAN_ONLY:
-            command["key1"] = self._config(CONF_AC_MODE_SPEED)
-        await self._device.set_dp(json.json_dumps(command), 201)
+            command = {
+                "control": "send_ir",
+                "head": "",
+                "key1": self._config(CONF_AC_MODE_SPEED),
+                "type": 0,
+                "delay": 300
+            }
+
+        await self._device.set_dp(json.dumps(command), "201")
 
     async def async_turn_on(self):
         """Turn the entity on."""
-        command = COMMAND
+        command = COMMANDS["send_ir"]
         command["key1"] = self._config(CONF_AC_SWITCH_ON)
-        await self._device.set_dp(json.json_dumps(command), 201)
+        await self._device.set_dp(json.dumps(command), 201)
 
     async def async_turn_off(self):
         """Turn the entity off."""
-        command = COMMAND
+        command = COMMANDS["send_ir"]
         command["key1"] = self._config(CONF_AC_SWITCH_OFF)
-        await self._device.set_dp(json.json_dumps(command), 201)
+        await self._device.set_dp(json.dumps(command), 201)
 
     @property
     def min_temp(self):
