@@ -44,7 +44,7 @@ _LOGGER = logging.getLogger(__name__)
 
 COMMAND = {
     "control": "send_ir",
-    "head": "",
+    "head": "010ed80000000000040015003d00a900c8",
     "key1": "",
     "type": 0,
     "delay": 300
