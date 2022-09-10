@@ -196,26 +196,26 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
         if hvac_mode == HVAC_MODE_HEAT:
             command["key1"] = self._config.get(CONF_AC_MODE_HOT)
         elif hvac_mode == HVAC_MODE_COOL:
-            command["key1"] = self._config(CONF_AC_MODE_COLD)
+            command["key1"] = self._config.get(CONF_AC_MODE_COLD)
         elif hvac_mode == HVAC_MODE_AUTO:
-            command["key1"] = self._config(CONF_AC_MODE_AUTO)
+            command["key1"] = self._config.get(CONF_AC_MODE_AUTO)
         elif hvac_mode == HVAC_MODE_DRY:
-            command["key1"] = self._config(CONF_AC_MODE_DEHUMY)
+            command["key1"] = self._config.get(CONF_AC_MODE_DEHUMY)
         elif hvac_mode == HVAC_MODE_FAN_ONLY:
-            command["key1"] = self._config(CONF_AC_MODE_SPEED)
+            command["key1"] = self._config.get(CONF_AC_MODE_SPEED)
 
         await self._device.set_dp(json.dumps(command), "201")
 
     async def async_turn_on(self):
         """Turn the entity on."""
         command = COMMAND
-        command["key1"] = self._config(CONF_AC_SWITCH_ON)
+        command["key1"] = self._config.get(CONF_AC_SWITCH_ON)
         await self._device.set_dp(json.dumps(command), "201")
 
     async def async_turn_off(self):
         """Turn the entity off."""
         command = COMMAND
-        command["key1"] = self._config(CONF_AC_SWITCH_OFF)
+        command["key1"] = self._config.get(CONF_AC_SWITCH_OFF)
         await self._device.set_dp(json.dumps(command), "201")
 
     @property
