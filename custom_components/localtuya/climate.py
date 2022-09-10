@@ -42,12 +42,14 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-COMMAND = {
-    "control": "send_ir",
-    "head": "010ed80000000000040015003d00a900c8",
-    "key1": "",
-    "type": 0,
-    "delay": 300
+COMMANDS = {
+    "send_ir": {
+        "control": "send_ir",
+        "head": "010ed80000000000040015003d00a900c8",
+        "key1": "",
+        "type": 0,
+        "delay": 300
+    }
 }
 
 def flow_schema(dps):
@@ -192,7 +194,7 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
     async def async_set_hvac_mode(self, hvac_mode):
         """Set new target operation mode."""
         self._hvac_mode = hvac_mode
-        command = COMMAND
+        command = COMMANDS["send_ir"]
         if hvac_mode == HVAC_MODE_HEAT:
             command["key1"] = self._config(CONF_AC_MODE_HOT)
         elif hvac_mode == HVAC_MODE_COOL:
