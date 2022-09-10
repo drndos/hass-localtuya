@@ -44,10 +44,14 @@ _LOGGER = logging.getLogger(__name__)
 
 COMMAND = {
     "control": "send_ir",
-    "head": "010ed80000000000040015003d00a900c8",
+    "head": "",
     "key1": "",
     "type": 0,
     "delay": 300
+}
+
+STUDY_COMMAND = {
+    "control": "",
 }
 
 def flow_schema(dps):
@@ -200,9 +204,11 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
         elif hvac_mode == HVAC_MODE_AUTO:
             command["key1"] = self._config.get(CONF_AC_MODE_AUTO)
         elif hvac_mode == HVAC_MODE_DRY:
-            command["key1"] = self._config.get(CONF_AC_MODE_DEHUMY)
+            command = STUDY_COMMAND
+            command["control"] = "study"
         elif hvac_mode == HVAC_MODE_FAN_ONLY:
-            command["key1"] = self._config.get(CONF_AC_MODE_SPEED)
+            command = STUDY_COMMAND
+            command["control"] = "study_exit"
 
         await self._device.set_dp(json.dumps(command), "201")
 
@@ -231,6 +237,9 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
     def status_updated(self):
         """Device status was updated."""
         self._state = self.dps(self._dp_id)
+
+        if self.dps("202"):
+            self._state = self.dps("202")
 
         if self.has_config(CONF_CURRENT_TEMPERATURE_DP):
             self._current_temperature = (
