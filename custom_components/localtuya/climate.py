@@ -42,14 +42,12 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-COMMANDS = {
-    "send_ir": {
-        "control": "send_ir",
-        "head": "010ed80000000000040015003d00a900c8",
-        "key1": "",
-        "type": 0,
-        "delay": 300
-    }
+COMMAND = {
+    "control": "send_ir",
+    "head": "010ed80000000000040015003d00a900c8",
+    "key1": "",
+    "type": 0,
+    "delay": 300
 }
 
 def flow_schema(dps):
@@ -194,62 +192,31 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
     async def async_set_hvac_mode(self, hvac_mode):
         """Set new target operation mode."""
         self._hvac_mode = hvac_mode
-        #command = COMMANDS["send_ir"]
-        command = None
+        command = COMMAND
         if hvac_mode == HVAC_MODE_HEAT:
-            command = {
-                "control": "send_ir",
-                "head": "",
-                "key1": self._config(CONF_AC_MODE_HOT),
-                "type": 0,
-                "delay": 300
-            }
+            command["key1"] = self._config.get(CONF_AC_MODE_HOT)
         elif hvac_mode == HVAC_MODE_COOL:
-            command = {
-                "control": "send_ir",
-                "head": "",
-                "key1": self._config(CONF_AC_MODE_COLD),
-                "type": 0,
-                "delay": 300
-            }
+            command["key1"] = self._config(CONF_AC_MODE_COLD)
         elif hvac_mode == HVAC_MODE_AUTO:
-            command = {
-                "control": "send_ir",
-                "head": "",
-                "key1": self._config(CONF_AC_MODE_AUTO),
-                "type": 0,
-                "delay": 300
-            }
+            command["key1"] = self._config(CONF_AC_MODE_AUTO)
         elif hvac_mode == HVAC_MODE_DRY:
-            command = {
-                "control": "send_ir",
-                "head": "",
-                "key1": self._config(CONF_AC_MODE_DEHUMY),
-                "type": 0,
-                "delay": 300
-            }
+            command["key1"] = self._config(CONF_AC_MODE_DEHUMY)
         elif hvac_mode == HVAC_MODE_FAN_ONLY:
-            command = {
-                "control": "send_ir",
-                "head": "",
-                "key1": self._config(CONF_AC_MODE_SPEED),
-                "type": 0,
-                "delay": 300
-            }
+            command["key1"] = self._config(CONF_AC_MODE_SPEED)
 
         await self._device.set_dp(json.dumps(command), "201")
 
     async def async_turn_on(self):
         """Turn the entity on."""
-        command = COMMANDS["send_ir"]
+        command = COMMAND
         command["key1"] = self._config(CONF_AC_SWITCH_ON)
-        await self._device.set_dp(json.dumps(command), 201)
+        await self._device.set_dp(json.dumps(command), "201")
 
     async def async_turn_off(self):
         """Turn the entity off."""
-        command = COMMANDS["send_ir"]
+        command = COMMAND
         command["key1"] = self._config(CONF_AC_SWITCH_OFF)
-        await self._device.set_dp(json.dumps(command), 201)
+        await self._device.set_dp(json.dumps(command), "201")
 
     @property
     def min_temp(self):
