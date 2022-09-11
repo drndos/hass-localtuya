@@ -14,7 +14,8 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_AUTO,
     HVAC_MODE_HEAT,
     HVAC_MODE_COOL, HVAC_MODE_DRY,
-    HVAC_MODE_FAN_ONLY, FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH,
+    HVAC_MODE_FAN_ONLY, FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH, HVAC_MODE_OFF,
+    SUPPORT_TARGET_TEMPERATURE, SUPPORT_FAN_MODE,
 )
 from homeassistant.const import (
     ATTR_TEMPERATURE,
@@ -79,6 +80,8 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
     def supported_features(self):
         """Flag supported features."""
         supported_features = 0
+        supported_features = supported_features | SUPPORT_TARGET_TEMPERATURE
+        supported_features = supported_features | SUPPORT_FAN_MODE
         return supported_features
 
     @property
@@ -109,6 +112,7 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
                 HVAC_MODE_COOL,
                 HVAC_MODE_FAN_ONLY,
                 HVAC_MODE_DRY,
+                HVAC_MODE_OFF,
                 ]
 
     @property
@@ -240,6 +244,8 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
             key = key[:20] + "B" + key[20+1:]
         elif hvac_mode == HVAC_MODE_FAN_ONLY:
             key = key[:17] + "E41B" + key[21:]
+        elif hvac_mode == HVAC_MODE_OFF:
+            key = "002$$0030B24D7B84E01F@%"
         return key
 
     def encode_fan_speed(self, key):
