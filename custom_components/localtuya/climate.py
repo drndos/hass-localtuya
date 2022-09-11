@@ -70,8 +70,8 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
         self._current_humidity = None
         self._current_humidity_dp = self._config.get(CONF_CURRENT_HUMIDITY_DP)
         self._fan_mode = FAN_AUTO
-        self._hvac_mode = HVAC_MODE_AUTO
-        self._target_temperature = 17
+        self._hvac_mode = HVAC_MODE_OFF
+        self._target_temperature = 22
         # self._dp_id
 
         _LOGGER.debug("Initialized ir climate [%s]", self.name)
