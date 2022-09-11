@@ -24,19 +24,7 @@ from homeassistant.const import (
 from .common import LocalTuyaEntity, async_setup_entry
 from .const import (
     CONF_CURRENT_TEMPERATURE_DP,
-    CONF_AC_SPEED_AUTO,
-    CONF_AC_SPEED_LOW,
-    CONF_AC_SPEED_MEDIUM,
-    CONF_AC_SPEED_HIGH,
-    CONF_AC_MODE_COLD,
-    CONF_AC_MODE_HOT,
-    CONF_AC_MODE_AUTO,
-    CONF_AC_MODE_SPEED,
-    CONF_AC_MODE_DEHUMY,
-    CONF_AC_SET_TEMP,
     CONF_CURRENT_HUMIDITY_DP,
-    CONF_AC_SWITCH_ON,
-    CONF_AC_SWITCH_OFF,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,23 +42,12 @@ STUDY_COMMAND = {
     "control": "",
 }
 
+
 def flow_schema(dps):
     """Return schema used in config flow."""
     return {
         vol.Optional(CONF_CURRENT_TEMPERATURE_DP): vol.In(dps),
         vol.Optional(CONF_CURRENT_HUMIDITY_DP): vol.In(dps),
-        vol.Optional(CONF_AC_SWITCH_ON): str,
-        vol.Optional(CONF_AC_SWITCH_OFF): str,
-        vol.Optional(CONF_AC_SPEED_AUTO): str,
-        vol.Optional(CONF_AC_SPEED_LOW): str,
-        vol.Optional(CONF_AC_SPEED_MEDIUM): str,
-        vol.Optional(CONF_AC_SPEED_HIGH): str,
-        vol.Optional(CONF_AC_MODE_COLD): str,
-        vol.Optional(CONF_AC_MODE_HOT): str,
-        vol.Optional(CONF_AC_MODE_AUTO): str,
-        vol.Optional(CONF_AC_MODE_SPEED): str,
-        vol.Optional(CONF_AC_MODE_DEHUMY): str,
-        vol.Optional(CONF_AC_SET_TEMP): str,
     }
 
 
@@ -91,9 +68,9 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
         self._current_temperature_dp = self._config.get(CONF_CURRENT_TEMPERATURE_DP)
         self._current_humidity = None
         self._current_humidity_dp = self._config.get(CONF_CURRENT_HUMIDITY_DP)
-        self._fan_mode = None
-        self._hvac_mode = None
-        self._target_temperature = None
+        self._fan_mode = FAN_AUTO
+        self._hvac_mode = HVAC_MODE_AUTO
+        self._target_temperature = 17
         # self._dp_id
 
         _LOGGER.debug("Initialized ir climate [%s]", self.name)
@@ -185,43 +162,27 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
         """Set new target temperature."""
         if ATTR_TEMPERATURE in kwargs:
             temperature = round(kwargs[ATTR_TEMPERATURE])
-            return NotImplementedError()
+            self._target_temperature = temperature
+            await self._device.set_dp(json.dumps(self.encode()), "201")
 
     def set_fan_mode(self, fan_mode):
         """Set new target fan mode."""
-        # Set temperature command
         self._fan_mode = fan_mode
-        return NotImplementedError()
+        await self._device.set_dp(json.dumps(self.encode()), "201")
 
     async def async_set_hvac_mode(self, hvac_mode):
         """Set new target operation mode."""
         self._hvac_mode = hvac_mode
-        command = COMMAND
-        if hvac_mode == HVAC_MODE_HEAT:
-            command["key1"] = self._config.get(CONF_AC_MODE_HOT)
-        elif hvac_mode == HVAC_MODE_COOL:
-            command["key1"] = self._config.get(CONF_AC_MODE_COLD)
-        elif hvac_mode == HVAC_MODE_AUTO:
-            command["key1"] = self._config.get(CONF_AC_MODE_AUTO)
-        elif hvac_mode == HVAC_MODE_DRY:
-            command = STUDY_COMMAND
-            command["control"] = "study"
-        elif hvac_mode == HVAC_MODE_FAN_ONLY:
-            command = STUDY_COMMAND
-            command["control"] = "study_exit"
-
-        await self._device.set_dp(json.dumps(command), "201")
+        await self._device.set_dp(json.dumps(self.encode()), "201")
 
     async def async_turn_on(self):
         """Turn the entity on."""
-        command = COMMAND
-        command["key1"] = self._config.get(CONF_AC_SWITCH_ON)
-        await self._device.set_dp(json.dumps(command), "201")
+        await self._device.set_dp(json.dumps(self.encode()), "201")
 
     async def async_turn_off(self):
         """Turn the entity off."""
         command = COMMAND
-        command["key1"] = self._config.get(CONF_AC_SWITCH_OFF)
+        command["key1"] = "002$$0030B24D7B84E01F@%"
         await self._device.set_dp(json.dumps(command), "201")
 
     @property
@@ -250,6 +211,98 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
             self._current_humidity = (
                 self.dps_conf(CONF_CURRENT_HUMIDITY_DP)
             )
+
+    def encode(self):
+        key = "002$$0030B24DXFX0XXXX@%"
+        key = self.encode_temperature(key)
+        key = self.encode_fan_speed(key)
+        key = self.encode_hvac_mode(key)
+        command = COMMAND
+        command["key1"] = key
+
+        return command
+
+    def encode_hvac_mode(self, key):
+        hvac_mode = self._hvac_mode
+        if hvac_mode == HVAC_MODE_AUTO:
+            key = key[:18] + "8" + key[18+1:]
+            key = key[:20] + "7" + key[20+1:]
+        elif hvac_mode == HVAC_MODE_COOL:
+            key = key[:18] + "0" + key[18+1:]
+            key = key[:20] + "F" + key[20+1:]
+        elif hvac_mode == HVAC_MODE_HEAT:
+            key = key[:18] + "C" + key[18+1:]
+            key = key[:20] + "3" + key[20+1:]
+        elif hvac_mode == HVAC_MODE_DRY:
+            key = key[:13] + "1" + key[13+1:]
+            key = key[:15] + "E" + key[15+1:]
+            key = key[:18] + "4" + key[18+1:]
+            key = key[:20] + "B" + key[20+1:]
+        elif hvac_mode == HVAC_MODE_FAN_ONLY:
+            key = key[:17] + "E41B" + key[21:]
+        return key
+
+    def encode_fan_speed(self, key):
+        fan_speed = self._fan_mode
+        if fan_speed == FAN_AUTO:
+            key = key[:13] + "B" + key[13+1:]
+            key = key[:15] + "4" + key[15+1:]
+        elif fan_speed == FAN_LOW:
+            key = key[:13] + "9" + key[13+1:]
+            key = key[:15] + "6" + key[15+1:]
+        elif fan_speed == FAN_MEDIUM:
+            key = key[:13] + "5" + key[13+1:]
+            key = key[:15] + "A" + key[15+1:]
+        elif fan_speed == FAN_HIGH:
+            key = key[:13] + "3" + key[13+1:]
+            key = key[:15] + "C" + key[15+1:]
+        return key
+
+    def encode_temperature(self, key):
+        temperature = self._target_temperature
+        if temperature == 17:
+            key = key[:17] + "0" + key[17+1:]
+            key = key[:19] + "F" + key[19+1:]
+        elif temperature == 18:
+            key = key[:17] + "1" + key[17+1:]
+            key = key[:19] + "E" + key[19+1:]
+        elif temperature == 19:
+            key = key[:17] + "3" + key[17+1:]
+            key = key[:19] + "C" + key[19+1:]
+        elif temperature == 20:
+            key = key[:17] + "2" + key[17+1:]
+            key = key[:19] + "D" + key[19+1:]
+        elif temperature == 21:
+            key = key[:17] + "6" + key[17+1:]
+            key = key[:19] + "9" + key[19+1:]
+        elif temperature == 22:
+            key = key[:17] + "7" + key[17+1:]
+            key = key[:19] + "8" + key[19+1:]
+        elif temperature == 23:
+            key = key[:17] + "5" + key[17+1:]
+            key = key[:19] + "A" + key[19+1:]
+        elif temperature == 24:
+            key = key[:17] + "4" + key[17+1:]
+            key = key[:19] + "B" + key[19+1:]
+        elif temperature == 25:
+            key = key[:17] + "C" + key[17+1:]
+            key = key[:19] + "3" + key[19+1:]
+        elif temperature == 26:
+            key = key[:17] + "D" + key[17+1:]
+            key = key[:19] + "2" + key[19+1:]
+        elif temperature == 27:
+            key = key[:17] + "9" + key[17+1:]
+            key = key[:19] + "6" + key[19+1:]
+        elif temperature == 28:
+            key = key[:17] + "8" + key[17+1:]
+            key = key[:19] + "7" + key[19+1:]
+        elif temperature == 29:
+            key = key[:17] + "A" + key[17+1:]
+            key = key[:19] + "5" + key[19+1:]
+        elif temperature == 30:
+            key = key[:17] + "B" + key[17+1:]
+            key = key[:19] + "4" + key[19+1:]
+        return key
 
 
 async_setup_entry = partial(async_setup_entry, DOMAIN, LocaltuyaIRClimate, flow_schema)

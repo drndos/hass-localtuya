@@ -82,18 +82,6 @@ CONF_FAN_DIRECTION_REV = "fan_direction_reverse"
 CONF_SCALING = "scaling"
 
 # ir controller ac
-CONF_AC_SWITCH_ON = "ac_switch_on_ir_command"
-CONF_AC_SWITCH_OFF = "ac_switch_off_ir_command"
-CONF_AC_SPEED_AUTO = "ac_speed_auto_ir_command"
-CONF_AC_SPEED_LOW = "ac_speed_low_ir_command"
-CONF_AC_SPEED_MEDIUM = "ac_speed_medium_ir_command"
-CONF_AC_SPEED_HIGH = "ac_speed_high_ir_command"
-CONF_AC_MODE_COLD = "ac_mode_cold_ir_command"
-CONF_AC_MODE_HOT = "ac_mode_hot_ir_command"
-CONF_AC_MODE_AUTO = "ac_mode_auto_ir_command"
-CONF_AC_MODE_SPEED = "ac_mode_speed_ir_command"
-CONF_AC_MODE_DEHUMY = "ac_mode_dehumy_ir_command"
-CONF_AC_SET_TEMP = "ac_set_temp_ir_command"
 CONF_CURRENT_HUMIDITY_DP = "current_humidity_dp"
 
 # climate
