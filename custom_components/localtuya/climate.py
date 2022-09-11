@@ -165,7 +165,7 @@ class LocaltuyaIRClimate(LocalTuyaEntity, ClimateEntity):
             self._target_temperature = temperature
             await self._device.set_dp(json.dumps(self.encode()), "201")
 
-    def set_fan_mode(self, fan_mode):
+    async def async_set_fan_mode(self, fan_mode):
         """Set new target fan mode."""
         self._fan_mode = fan_mode
         await self._device.set_dp(json.dumps(self.encode()), "201")
