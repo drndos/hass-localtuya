@@ -159,7 +159,7 @@ class LocalTuyaRemote(LocalTuyaEntity, RemoteEntity):
         else:
             for command in commands:
                 code = command
-                await self.send_signal(ControlMode.SEND_IR, code)
+                await self.send_signal(ControlMode.SEND_IR, code, int(repeats_delay*1000))
 
 
     async def async_learn_command(self, **kwargs: Any) -> None:
