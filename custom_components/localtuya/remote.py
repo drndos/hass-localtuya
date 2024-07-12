@@ -36,6 +36,7 @@ NSDP_CONTROL = "control"  # The control commands
 NSDP_TYPE = "type"  # The identifier of an IR library
 NSDP_HEAD = "head"  # Actually used but not documented
 NSDP_KEY1 = "key1"  # Actually used but not documented
+NSDP_DELAY = "delay"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -134,34 +135,32 @@ class LocalTuyaRemote(LocalTuyaEntity, RemoteEntity):
         repeats: int = kwargs.get(ATTR_NUM_REPEATS)
         repeats_delay: float = kwargs.get(ATTR_DELAY_SECS)
 
-        for req in [device, commands]:
-            if not req:
-                raise ServiceValidationError("Missing required fields")
+        if not commands:
+            raise ServiceValidationError("Missing required fields")
 
-        if not self._storage_loaded:
-            await self._async_load_storage()
+        if device:
+            if not self._storage_loaded:
+                await self._async_load_storage()
 
-        # base64_code = ""
-        # if base64_code is None:
-        #     option_value = ""
-        #     _LOGGER.debug("Sending Option: -> " + option_value)
+            for command in commands:
+                code = self._get_code(device, command)
 
-        #     pulses = self.pronto_to_pulses(option_value)
-        #     base64_code = "1" + self.pulses_to_base64(pulses)
-        for command in commands:
-            code = self._get_code(device, command)
+                base64_code = "1" + code
+                if repeats:
+                    current_repeat = 0
+                    while current_repeat < repeats:
+                        await self.send_signal(ControlMode.SEND_IR, base64_code)
+                        if repeats_delay:
+                            await asyncio.sleep(repeats_delay)
+                        current_repeat += 1
+                    continue
 
-            base64_code = "1" + code
-            if repeats:
-                current_repeat = 0
-                while current_repeat < repeats:
-                    await self.send_signal(ControlMode.SEND_IR, base64_code)
-                    if repeats_delay:
-                        await asyncio.sleep(repeats_delay)
-                    current_repeat += 1
-                continue
+                await self.send_signal(ControlMode.SEND_IR, base64_code)
+        else:
+            for command in commands:
+                code = command
+                await self.send_signal(ControlMode.SEND_IR, code)
 
-            await self.send_signal(ControlMode.SEND_IR, base64_code)
 
     async def async_learn_command(self, **kwargs: Any) -> None:
         """Learn a command from a device."""
@@ -234,7 +233,7 @@ class LocalTuyaRemote(LocalTuyaEntity, RemoteEntity):
         for command in commands:
             await self._delete_command(device, command)
 
-    async def send_signal(self, control, base64_code=None):
+    async def send_signal(self, control, base64_code=None, delay=0):
         if self._ir_control_type == ControlType.ENUM:
             command = {self._dp_id: control}
             if control == ControlMode.SEND_IR:
@@ -245,8 +244,15 @@ class LocalTuyaRemote(LocalTuyaEntity, RemoteEntity):
             command = {NSDP_CONTROL: control}
             if control == ControlMode.SEND_IR:
                 command[NSDP_TYPE] = 0
-                command[NSDP_HEAD] = ""  # also known as ir_code
-                command[NSDP_KEY1] = base64_code  # also code: key_code
+                if '|' in base64_code:
+                    parts = base64_code.split('|')
+                    command[NSDP_HEAD] = parts[0]
+                    command[NSDP_KEY1] = parts[1]
+                else:
+                    command[NSDP_HEAD] = ""  # also known as ir_code
+                    command[NSDP_KEY1] = base64_code  # also code: key_code
+                if delay > 0:
+                    command[NSDP_DELAY] = delay
             command = {self._dp_id: json.dumps(command)}
 
         self.debug(f"Sending IR Command: {command}")
